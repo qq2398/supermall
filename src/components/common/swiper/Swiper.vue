@@ -18,7 +18,6 @@
 		name: "Swiper",
     props: {
       interval: {
-        // 时间
 		    type: Number,
         default: 3000
       },
@@ -27,7 +26,6 @@
         default: 300
       },
       moveRatio: {
-        //比例
         type: Number,
         default: 0.25
       },
