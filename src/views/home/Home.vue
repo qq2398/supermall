@@ -1,18 +1,25 @@
 <template>
   <div id="home" class="wrapper">
     <nav-bar class="home-nav"><div slot="center">购物街</div></nav-bar>
+    <tab-control class="tab-control"
+                   :titles="['流行', '新款', '精选']"
+                   @tabClick="tabClick"
+                    ref="tabControl1"
+                    v-show="isTabFixed"
+                   />
     <scroll class="content"
             ref="scroll"
             :probe-type="3"
             @scroll="contentScroll"
-            :pull-up-load="true"
-            @pullingUp="loadMore">
-      <home-swiper :banners="banners"/>
+            :pull-up-load="true" 
+            @pullingUp="loadMore" >
+             <!-- @pullingUp="loadMore" -->
+      <home-swiper :banners="banners" @swiperImageLoad="swiperImageLoad"/>
       <recommend-view :recommends="recommends"/>
       <feature-view/>
-      <tab-control class="tab-control"
-                   :titles="['流行', '新款', '精选']"
-                   @tabClick="tabClick"/>
+      <tab-control :titles="['流行', '新款', '精选']"
+                   @tabClick="tabClick" ref="tabControl2"
+                   />
       <good-list :goods="showGoods"/>
     </scroll>
     <div>呵呵呵呵</div>
@@ -55,7 +62,9 @@
           'sell': {page: 0, list: []},
         },
         currentType: 'pop',
-        isShowBackTop: false
+        isShowBackTop: false,
+        tabOffsetTop: 0,
+        isTabFixed: false,
       }
     },
     computed: {
@@ -71,8 +80,31 @@
       this.getHomeGoods('pop')
       this.getHomeGoods('new')
       this.getHomeGoods('sell')
+
+      
+      
     },
+    mounted(){
+      //保证scroll不为空
+      //3.监听商品的图片加载,实时刷新可滚动区域的高度
+      this.$bus.$on('itemImageLoad',()=>{
+          this.$refs.scroll.refresh()
+      })
+      
+    }
+    ,
     methods: {
+      swiperImageLoad(){
+        //获取tabControl的offsetTop
+      //所有的组件都有一个属性$el:yongyu获取组件中的元素
+      // console.log( this.$refs.tabControl.$el.offsetTop)
+      this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop
+      },
+
+      //防抖函数debounce(传入的函数,等待的时间),让refresh()不要更新过多次
+      debounce(){
+
+      },
       /**
        * 事件监听相关的方法
        */
@@ -88,15 +120,22 @@
             this.currentType = 'sell'
             break
         }
+        this.$refs.tabControl1.currentIndex = index;
+        this.$refs.tabControl2.currentIndex = index;
+
       },
       backClick() {
         this.$refs.scroll.scrollTo(0, 0)
       },
       contentScroll(position) {
-        this.isShowBackTop = (-position.y) > 1000
+        this.isShowBackTop = (-position.y) > 1000,
+
+        this.isTabFixed = (-position.y) > this.tabOffsetTop
       },
       loadMore() {
         this.getHomeGoods(this.currentType)
+        // 图片是异步加载的,需要重新计算(可滚定区域)content-wrapper的值
+        this.$refs.scroll.scroll.refresh()
       },
       /**
        * 网络请求相关的方法
@@ -130,20 +169,16 @@
 
   .home-nav {
     background-color: var(--color-tint);
-    color: #fff;
+    color: rgb(238, 241, 245);
 
-    position: fixed;
+    /* position: fixed;
     left: 0;
     right: 0;
     top: 0;
-    z-index: 9;
+    z-index: 9; */
   }
 
-  .tab-control {
-    position: sticky;
-    top: 44px;
-    z-index: 9;
-  }
+ 
 
   .content {
     overflow: hidden;
@@ -154,6 +189,16 @@
     left: 0;
     right: 0;
   }
+.tab-control{
+  position: relative;
+  z-index: 9;
+}
+  /* .fixed{
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 44px;
+  } */
 
   /*.content {*/
     /*height: calc(100% - 93px);*/
